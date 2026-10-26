@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Planificador Personal - iPad 2</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* CSS general compatible con WebKit antiguo (iOS 9) */
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f3f4f6;
+            color: #1f2937;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+        }
+
+        /* Utilidades personalizadas con prefijos para compatibilidad */
+        .glass-panel {
+            background-color: rgba(255, 255, 255, 0.95);
+            border: 1px solid #e5e7eb;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        }
+
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+        }
+
+        .active-tab {
+            background-color: #2563eb !important;
+            color: #ffffff !important;
+            font-weight: 600;
+        }
+
+        /* Estilos de botones táctiles para dedos en iPad */
+        .touch-btn {
+            min-height: 44px;
+            min-width: 44px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+            transition: background-color 0.15s ease, transform 0.1s ease;
+        }
+
+        .touch-btn:active {
+            transform: scale(0.97);
+        }
+
+        /* Scrollbar suave para iOS 9 */
+        .ios-overflow {
+            -webkit-overflow-scrolling: touch;
+        }
+
+        /* Badge personalizada */
+        .badge-cultural {
+            background-color: #dbeafe;
+            color: #1e40af;
+            border: 1px solid #bfdbfe;
+        }
+
+        .badge-gym {
+            background-color: #dcfce7;
+            color: #166534;
+            border: 1px solid #bbf7d0;
+        }
+    </style>
+</head>
+<body class="h-screen w-screen flex flex-col overflow-hidden bg-slate-100 select-none">
+
+    <!-- CABECERA ESTILO iCLOUD -->
+    <header class="bg-white border-b border-gray-200 px-6 py-3 flex justify-between items-center shrink-0 shadow-sm">
+        <div class="flex items-center space-x-4">
+            <div class="p-2 bg-blue-600 text-white rounded-lg shadow-sm">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+            </div>
+            <div>
+                <h1 class="text-xl font-bold text-gray-800 tracking-tight" id="header-title">Mi Horario & Objetivos</h1>
+                <p class="text-xs text-gray-500 font-medium" id="header-date">Cargando fecha...</p>
+            </div>
+        </div>
+
+        <!-- NAVEGACIÓN POR PESTAÑAS -->
+        <nav class="flex bg-gray-100 p-1 rounded-xl border border-gray-200 space-x-1">
+            <button onclick="switchTab('mes')" id="tab-btn-mes" class="touch-btn px-4 py-2 text-sm text-gray-600 rounded-lg active-tab">
+                Calendario Mensual
+            </button>
+            <button onclick="switchTab('semana')" id="tab-btn-semana" class="touch-btn px-4 py-2 text-sm text-gray-600 rounded-lg">
+                Planificador Semanal
+            </button>
+            <button onclick="switchTab('tareas')" id="tab-btn-tareas" class="touch-btn px-4 py-2 text-sm text-gray-600 rounded-lg">
+                Lista de Tareas
+            </button>
+        </nav>
+    </header>
+
+    <!-- CONTENIDO PRINCIPAL -->
+    <main class="flex-1 overflow-hidden p-4 relative">
+
+        <!-- 1. PESTAÑA: CALENDARIO MENSUAL -->
+        <section id="view-mes" class="h-full flex flex-col glass-panel rounded-2xl overflow-hidden p-4">
+            <div class="flex justify-between items-center mb-4 pb-2 border-b border-gray-200">
+                <div class="flex items-center space-x-2">
+                    <button onclick="changeMonth(-1)" class="touch-btn bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1 border border-gray-300">
+                        &larr; Anterior
+                    </button>
+                    <h2 class="text-lg font-bold text-gray-800" id="month-label">Mes Año</h2>
+                    <button onclick="changeMonth(1)" class="touch-btn bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1 border border-gray-300">
+                        Siguiente &rarr;
+                    </button>
+                </div>
+                <div class="flex items-center space-x-4 text-xs">
+                    <span class="flex items-center"><span class="w-3 h-3 bg-blue-500 rounded-full inline-block mr-1"></span> Evento cultural</span>
+                    <span class="flex items-center"><span class="w-3 h-3 bg-green-500 rounded-full inline-block mr-1"></span> Evento</span>
+                </div>
+            </div>
+
+            <!-- Días de la semana -->
+            <div class="calendar-grid text-center font-semibold text-xs text-gray-500 mb-2 py-1 bg-gray-50 rounded-lg border border-gray-200">
+                <div>LUN</div><div>MAR</div><div>MIÉ</div><div>JUE</div><div>VIE</div><div>SÁB</div><div>DOM</div>
+            </div>
+
+            <!-- Grid de días -->
+            <div class="calendar-grid flex-1 gap-1 ios-overflow overflow-y-auto" id="month-grid">
+                <!-- Generado dinámicamente -->
+            </div>
+        </section>
+
+        <!-- 2. PESTAÑA: PLANIFICADOR SEMANAL -->
+        <section id="view-semana" class="h-full flex flex-col space-y-3 hidden">
+            <!-- Barra de Progreso de Objetivos -->
+            <div class="glass-panel p-3 rounded-xl flex justify-between items-center border border-gray-200">
+                <div class="flex space-x-6 text-sm">
+                    <div>
+                        <span class="text-gray-500 font-medium">Gimnasio Semanal:</span>
+                        <span id="gym-count" class="font-bold text-green-600 ml-1">0/3</span>
+                        <span class="text-xs text-gray-400 block">(Meta: Mínimo 3 días)</span>
+                    </div>
+                    <div>
+                        <span class="text-gray-500 font-medium">Búsqueda Empleo:</span>
+                        <span id="job-count" class="font-bold text-blue-600 ml-1">0/14 bloques</span>
+                        <span class="text-xs text-gray-400 block">(4h/día = 2 bloques/día)</span>
+                    </div>
+                    <div>
+                        <span class="text-gray-500 font-medium">Hobbies / Desconexión:</span>
+                        <span id="hobby-count" class="font-bold text-purple-600 ml-1">0/14 bloques</span>
+                        <span class="text-xs text-gray-400 block">(2h/día = 2 bloques/día)</span>
+                    </div>
+                </div>
+                <button id="reset-week-btn" onclick="resetWeeklySchedule()" class="touch-btn bg-gray-100 hover:bg-gray-200 text-xs text-gray-600 px-3 py-1 border border-gray-300">
+                    Reiniciar Semana
+                </button>
+            </div>
+
+            <!-- Tabla del Horario Semanal -->
+            <div class="flex-1 glass-panel rounded-xl overflow-hidden flex flex-col border border-gray-200">
+                <div class="grid grid-cols-8 bg-gray-100 border-b border-gray-200 text-center font-bold text-xs text-gray-600 py-2">
+                    <div>HORA / RUTINA</div>
+                    <div>LUNES</div>
+                    <div>MARTES</div>
+                    <div>MIÉRCOLES</div>
+                    <div>JUEVES</div>
+                    <div>VIERNES</div>
+                    <div>SÁBADO</div>
+                    <div>DOMINGO</div>
+                </div>
+
+                <div class="flex-1 ios-overflow overflow-y-auto divide-y divide-gray-200 text-xs" id="weekly-schedule-body">
+                    <!-- Filas generadas dinámicamente -->
+                </div>
+            </div>
+        </section>
+
+        <!-- 3. PESTAÑA: LISTA DE TAREAS -->
+        <section id="view-tareas" class="h-full flex flex-col space-y-3 hidden">
+            <div class="glass-panel p-4 rounded-xl flex items-center justify-between border border-gray-200">
+                <form onsubmit="addTask(event)" class="flex-1 flex space-x-2">
+                    <input type="text" id="task-input" placeholder="Escribe una nueva tarea..." class="flex-1 border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:border-blue-500" required>
+                    <div id="new-task-stars" class="flex items-center"></div>
+                    <button type="submit" class="touch-btn bg-blue-600 text-white px-5 py-2 text-sm font-semibold rounded-lg shadow-sm">
+                        Añadir Tarea
+                    </button>
+                </form>
+                <div class="ml-4 flex space-x-1 bg-gray-100 p-1 rounded-lg border border-gray-200 text-xs">
+                    <button onclick="filterTasks('all')" id="filter-all" class="px-3 py-1 rounded bg-white font-medium shadow-sm">Todas</button>
+                    <button onclick="filterTasks('pending')" id="filter-pending" class="px-3 py-1 rounded text-gray-600">Pendientes</button>
+                    <button onclick="filterTasks('completed')" id="filter-completed" class="px-3 py-1 rounded text-gray-600">Completadas</button>
+                </div>
+            </div>
+
+            <div class="flex-1 glass-panel rounded-xl p-4 ios-overflow overflow-y-auto border border-gray-200">
+                <ul id="task-list" class="space-y-2">
+                    <!-- Tareas insertadas por JS -->
+                </ul>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- MODAL DE DÍA PARA CALENDARIO MENSUAL -->
+    <div id="day-modal" class="fixed inset-0 bg-black/40 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-2xl shadow-xl max-w-md w-full p-5 border border-gray-200">
+            <h3 class="text-lg font-bold text-gray-800 mb-3" id="modal-date-title">Detalle del Día</h3>
+
+            <ul id="modal-event-list" class="space-y-1 mb-3"></ul>
+
+            <div class="space-y-3">
+                <div>
+                    <label class="block text-xs font-semibold text-gray-600 mb-1">Evento</label>
+                    <div class="flex space-x-2">
+                        <input type="time" id="modal-time-input" class="border border-gray-300 rounded-lg px-2 py-2 text-sm focus:outline-none focus:border-blue-500" style="width:110px;">
+                        <input type="text" id="modal-note-input" class="flex-1 min-w-0 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500" placeholder="Ej. Comida con...">
+                        <button onclick="addModalEvent()" class="touch-btn bg-blue-600 text-white text-lg px-3 font-semibold">+</button>
+                    </div>
+                </div>
+
+                <div class="flex items-center space-x-2">
+                    <input type="checkbox" id="modal-cultural-check" class="w-4 h-4 text-blue-600 rounded border-gray-300">
+                    <label for="modal-cultural-check" class="text-xs font-medium text-gray-700">Evento cultural</label>
+                </div>
+            </div>
+
+            <div class="flex justify-end space-x-2 mt-6">
+                <button onclick="closeDayModal()" class="touch-btn bg-gray-100 text-gray-600 text-xs px-4 py-2 border border-gray-300">
+                    Cancelar
+                </button>
+                <button onclick="saveDayModal()" class="touch-btn bg-blue-600 text-white text-xs px-4 py-2 font-semibold">
+                    Guardar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- LOGICA JAVASCRIPT COMPATIBLE CON iOS 9 -->
+    <script>
+        // ESTADO DE LA APLICACIÓN
+        var currentDate = new Date();
+        var selectedYear = currentDate.getFullYear();
+        var selectedMonth = currentDate.getMonth();
+
+        var daysOfWeek = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
+
+        // Estructuras de datos guardadas en localStorage
+        var monthEvents = JSON.parse(localStorage.getItem("ipad_month_events") || "{}");
+        var tasks = JSON.parse(localStorage.getItem("ipad_tasks") || "[]");
+        var taskFilter = "all";
+        var newTaskPriority = 1;
+        var modalEvents = [];
+
+        function escapeHtml(str) {
+            return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        }
+
+        // Normaliza datos antiguos (una nota por día) al formato de lista de eventos
+        function getDayData(dayKey) {
+            var d = monthEvents[dayKey];
+            if (!d) return { events: [] };
+            var evs = d.events ? d.events.slice() : [];
+            if (d.note) evs.push({ time: "", text: d.note, cultural: !!d.cultural });
+            else if (d.cultural && !d.events) evs.push({ time: "", text: "Evento cultural", cultural: true });
+            return { events: sortEvents(evs) };
+        }
+
+        // Orden cronológico; los eventos sin hora van al final
+        function sortEvents(list) {
+            return list.sort(function(a, b) {
+                if (a.time === b.time) return 0;
+                if (!a.time) return 1;
+                if (!b.time) return -1;
+                return a.time < b.time ? -1 : 1;
+            });
+        }
+
+        // Esquema por defecto del plan semanal (Flexible)
+        var defaultSchedule = {
+            "09:00 - 10:00": ["Rutina Matutina", "Rutina Matutina", "Rutina Matutina", "Rutina Matutina", "Rutina Matutina", "Rutina Matutina", "Rutina Matutina"],
+            "10:00 - 12:00": ["Gimnasio", "Empleo", "Gimnasio", "Empleo", "Gimnasio", "Empleo", "Empleo"],
+            "12:00 - 13:00": ["Hobby", "Hobby", "Hobby", "Hobby", "Hobby", "Hobby", "Hobby"],
+            "13:00 - 16:00": ["Comida / Descanso", "Comida / Descanso", "Comida / Descanso", "Comida / Descanso", "Comida / Descanso", "Comida / Descanso", "Comida / Descanso"],
+            "16:00 - 18:00": ["Empleo", "Empleo", "Empleo", "Empleo", "Empleo", "Empleo", "Empleo"],
+            "18:00 - 19:00": ["Hobby", "Hobby", "Hobby", "Hobby", "Hobby", "Hobby", "Hobby"]
+        };
+
+        var weeklySchedule = JSON.parse(localStorage.getItem("ipad_weekly_schedule") || JSON.stringify(defaultSchedule));
+
+        // INICIALIZACIÓN
+        window.onload = function() {
+            updateHeaderDate();
+            renderMonthGrid();
+            renderWeeklySchedule();
+            renderNewTaskStars();
+            renderTasks();
+        };
+
+        function updateHeaderDate() {
+            var options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            document.getElementById("header-date").innerText = currentDate.toLocaleDateString('es-ES', options);
+        }
+
+        // CAMBIO DE PESTAÑAS
+        function switchTab(tabName) {
+            var tabs = ["mes", "semana", "tareas"];
+            for (var i = 0; i < tabs.length; i++) {
+                var t = tabs[i];
+                var viewEl = document.getElementById("view-" + t);
+                var btnEl = document.getElementById("tab-btn-" + t);
+                
+                if (t === tabName) {
+                    viewEl.classList.remove("hidden");
+                    btnEl.classList.add("active-tab");
+                } else {
+                    viewEl.classList.add("hidden");
+                    btnEl.classList.remove("active-tab");
+                }
+            }
+        }
+
+        // 1. LÓGICA CALENDARIO MENSUAL
+        function changeMonth(delta) {
+            selectedMonth += delta;
+            if (selectedMonth < 0) {
+                selectedMonth = 11;
+                selectedYear--;
+            } else if (selectedMonth > 11) {
+                selectedMonth = 0;
+                selectedYear++;
+            }
+            renderMonthGrid();
+        }
+
+        function renderMonthGrid() {
+            var monthNames = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+            document.getElementById("month-label").innerText = monthNames[selectedMonth] + " " + selectedYear;
+
+            var grid = document.getElementById("month-grid");
+            grid.innerHTML = "";
+
+            var firstDayIndex = new Date(selectedYear, selectedMonth, 1).getDay();
+            // Ajustar para que semana empiece en Lunes (0)
+            var startingDay = firstDayIndex === 0 ? 6 : firstDayIndex - 1;
+            var totalDays = new Date(selectedYear, selectedMonth + 1, 0).getDate();
+
+            // Celdas vacías del mes anterior
+            for (var x = 0; x < startingDay; x++) {
+                var emptyDiv = document.createElement("div");
+                emptyDiv.className = "bg-gray-50/50 rounded-lg border border-transparent";
+                grid.appendChild(emptyDiv);
+            }
+
+            // Celdas activas
+            var today = new Date();
+            for (var day = 1; day <= totalDays; day++) {
+                var dayKey = selectedYear + "-" + (selectedMonth + 1) + "-" + day;
+                var eventData = getDayData(dayKey);
+
+                var isToday = (day === today.getDate() && selectedMonth === today.getMonth() && selectedYear === today.getFullYear());
+
+                var dayDiv = document.createElement("div");
+                dayDiv.className = "bg-white p-2 rounded-lg border border-gray-200 flex flex-col justify-between cursor-pointer hover:border-blue-400 relative " + (isToday ? "ring-2 ring-blue-500 bg-blue-50/30" : "");
+                
+                (function(dKey, dNum) {
+                    dayDiv.onclick = function() { openDayModal(dKey, dNum); };
+                })(dayKey, day);
+
+                var topRow = '<div class="flex justify-between items-center"><span class="font-bold text-xs ' + (isToday ? 'text-blue-600' : 'text-gray-700') + '">' + day + '</span>';
+                
+                topRow += '</div>';
+
+                var content = '<div class="mt-1 text-[10px] text-gray-500 space-y-0.5 overflow-hidden">';
+                for (var k = 0; k < eventData.events.length; k++) {
+                    var ev = eventData.events[k];
+                    content += '<span class="block px-1 rounded border truncate ' + (ev.cultural ? 'bg-blue-50 text-blue-700 border-blue-200' : 'bg-green-50 text-green-700 border-green-200') + '">' + (ev.time ? '<b>' + ev.time + '</b> ' : '') + escapeHtml(ev.text) + '</span>';
+                }
+                content += '</div>';
+
+                dayDiv.innerHTML = topRow + content;
+                grid.appendChild(dayDiv);
+            }
+        }
+
+        // MODAL DE DÍAS DE MES
+        var currentActiveDayKey = null;
+
+        function openDayModal(dayKey, dayNum) {
+            currentActiveDayKey = dayKey;
+            var eventData = getDayData(dayKey);
+            modalEvents = eventData.events;
+
+            document.getElementById("modal-date-title").innerText = "Día " + dayNum + " de " + document.getElementById("month-label").innerText;
+            document.getElementById("modal-time-input").value = "";
+            document.getElementById("modal-note-input").value = "";
+            document.getElementById("modal-cultural-check").checked = false;
+            renderModalEvents();
+
+            document.getElementById("day-modal").classList.remove("hidden");
+        }
+
+        function renderModalEvents() {
+            var list = document.getElementById("modal-event-list");
+            list.innerHTML = "";
+            for (var i = 0; i < modalEvents.length; i++) {
+                var ev = modalEvents[i];
+                var li = document.createElement("li");
+                li.className = "flex items-center justify-between text-sm rounded-lg border px-3 " + (ev.cultural ? "bg-blue-50 border-blue-200 text-blue-800" : "bg-gray-50 border-gray-200");
+                li.innerHTML = '<span class="truncate"><span class="font-semibold text-gray-600 inline-block mr-2" style="min-width:44px;">' + (ev.time || '--:--') + '</span>' + escapeHtml(ev.text) + '</span>' +
+                    '<button onclick="removeModalEvent(' + i + ')" class="touch-btn text-red-500 text-xs px-2">Eliminar</button>';
+                list.appendChild(li);
+            }
+        }
+
+        function addModalEvent() {
+            var timeInput = document.getElementById("modal-time-input");
+            var textInput = document.getElementById("modal-note-input");
+            var text = textInput.value.trim();
+            if (!text) return;
+            var cultural = document.getElementById("modal-cultural-check");
+            modalEvents.push({ time: timeInput.value, text: text, cultural: cultural.checked });
+            sortEvents(modalEvents);
+            timeInput.value = "";
+            textInput.value = "";
+            cultural.checked = false;
+            renderModalEvents();
+        }
+
+        function removeModalEvent(index) {
+            modalEvents.splice(index, 1);
+            renderModalEvents();
+        }
+
+        function closeDayModal() {
+            document.getElementById("day-modal").classList.add("hidden");
+            currentActiveDayKey = null;
+        }
+
+        function saveDayModal() {
+            if (!currentActiveDayKey) return;
+
+            // Si hay un evento escrito sin añadir, se añade al guardar
+            addModalEvent();
+
+            if (modalEvents.length) {
+                monthEvents[currentActiveDayKey] = {
+                    events: modalEvents
+                };
+            } else {
+                delete monthEvents[currentActiveDayKey];
+            }
+
+            localStorage.setItem("ipad_month_events", JSON.stringify(monthEvents));
+            closeDayModal();
+            renderMonthGrid();
+        }
+
+        // 2. LÓGICA PLANIFICADOR SEMANAL
+        function renderWeeklySchedule() {
+            var tbody = document.getElementById("weekly-schedule-body");
+            tbody.innerHTML = "";
+
+            var gymCount = 0;
+            var jobCount = 0;
+            var hobbyCount = 0;
+
+            var hours = Object.keys(weeklySchedule);
+
+            for (var i = 0; i < hours.length; i++) {
+                var hour = hours[i];
+                var rowDiv = document.createElement("div");
+                rowDiv.className = "grid grid-cols-8 items-center py-2 text-center border-b border-gray-100 hover:bg-gray-50/50";
+
+                var hourCell = '<div class="font-semibold text-gray-500 text-[11px] px-1">' + hour + '</div>';
+                rowDiv.innerHTML = hourCell;
+
+                for (var dayIdx = 0; dayIdx < 7; dayIdx++) {
+                    var slotType = weeklySchedule[hour][dayIdx];
+
+                    // Contadores de métricas
+                    if (slotType === "Gimnasio") gymCount++;
+                    if (slotType === "Empleo") jobCount++;
+                    if (slotType === "Hobby") hobbyCount++;
+
+                    var cellDiv = document.createElement("div");
+                    cellDiv.className = "px-1";
+
+                    var btnClass = "w-full py-2 rounded-lg font-medium text-[11px] border touch-btn ";
+                    if (slotType === "Gimnasio") {
+                        btnClass += "bg-green-100 text-green-800 border-green-300";
+                    } else if (slotType === "Empleo") {
+                        btnClass += "bg-blue-100 text-blue-800 border-blue-300";
+                    } else if (slotType === "Hobby") {
+                        btnClass += "bg-purple-100 text-purple-800 border-purple-300";
+                    } else if (slotType === "Rutina Matutina") {
+                        btnClass += "bg-amber-100 text-amber-800 border-amber-300";
+                    } else {
+                        btnClass += "bg-gray-50 text-gray-400 border-gray-200";
+                    }
+
+                    cellDiv.innerHTML = '<button class="' + btnClass + '">' + slotType + '</button>';
+
+                    // Evento para alternar tipo de bloque interactivo (pensado para táctil)
+                    (function(h, d) {
+                        cellDiv.onclick = function() { toggleScheduleSlot(h, d); };
+                    })(hour, dayIdx);
+
+                    rowDiv.appendChild(cellDiv);
+                }
+
+                tbody.appendChild(rowDiv);
+            }
+
+            // Actualizar contadores
+            document.getElementById("gym-count").innerText = gymCount + "/3";
+            document.getElementById("job-count").innerText = jobCount + " bloques";
+            document.getElementById("hobby-count").innerText = hobbyCount + " bloques";
+        }
+
+        function toggleScheduleSlot(hour, dayIdx) {
+            var options = ["Empleo", "Gimnasio", "Hobby", "Libre"];
+            var current = weeklySchedule[hour][dayIdx];
+            
+            // No modificar la rutina matutina por defecto
+            if (current === "Rutina Matutina" || current === "Comida / Descanso") return;
+
+            var nextIdx = (options.indexOf(current) + 1) % options.length;
+            weeklySchedule[hour][dayIdx] = options[nextIdx];
+
+            localStorage.setItem("ipad_weekly_schedule", JSON.stringify(weeklySchedule));
+            renderWeeklySchedule();
+        }
+
+        var resetTimer = null;
+
+        function resetWeeklySchedule() {
+            var btn = document.getElementById("reset-week-btn");
+
+            // Primer toque: pide confirmación en el propio botón
+            if (!resetTimer) {
+                btn.innerText = "¿Seguro? Toca otra vez";
+                btn.className = btn.className.replace("bg-gray-100", "bg-red-100");
+                resetTimer = setTimeout(cancelResetConfirm, 3000);
+                return;
+            }
+
+            // Segundo toque: reinicia
+            cancelResetConfirm();
+            weeklySchedule = JSON.parse(JSON.stringify(defaultSchedule));
+            localStorage.setItem("ipad_weekly_schedule", JSON.stringify(weeklySchedule));
+            renderWeeklySchedule();
+        }
+
+        function cancelResetConfirm() {
+            var btn = document.getElementById("reset-week-btn");
+            clearTimeout(resetTimer);
+            resetTimer = null;
+            btn.innerText = "Reiniciar Semana";
+            btn.className = btn.className.replace("bg-red-100", "bg-gray-100");
+        }
+
+        // 3. LÓGICA LISTA DE TAREAS
+        function addTask(e) {
+            e.preventDefault();
+            var input = document.getElementById("task-input");
+            var title = input.value.trim();
+
+            if (title) {
+                tasks.push({
+                    id: new Date().getTime(),
+                    title: title,
+                    completed: false,
+                    priority: newTaskPriority
+                });
+                input.value = "";
+                saveTasks();
+                renderTasks();
+            }
+        }
+
+        function starsHtml(value, handler) {
+            var html = "";
+            for (var n = 1; n <= 3; n++) {
+                html += '<button type="button" onclick="' + handler + n + ')" class="touch-btn text-xl ' + (n <= value ? 'text-amber-400' : 'text-gray-300') + '" style="min-width:36px;">' + (n <= value ? '\u2605' : '\u2606') + '</button>';
+            }
+            return html;
+        }
+
+        function renderNewTaskStars() {
+            document.getElementById("new-task-stars").innerHTML = starsHtml(newTaskPriority, "setNewTaskPriority(");
+        }
+
+        function setNewTaskPriority(n) {
+            newTaskPriority = n;
+            renderNewTaskStars();
+        }
+
+        function setTaskPriority(id, n) {
+            for (var i = 0; i < tasks.length; i++) {
+                if (tasks[i].id === id) {
+                    tasks[i].priority = n;
+                    break;
+                }
+            }
+            saveTasks();
+            renderTasks();
+        }
+
+        function toggleTask(id) {
+            for (var i = 0; i < tasks.length; i++) {
+                if (tasks[i].id === id) {
+                    tasks[i].completed = !tasks[i].completed;
+                    break;
+                }
+            }
+            saveTasks();
+            renderTasks();
+        }
+
+        function deleteTask(id) {
+            tasks = tasks.filter(function(t) { return t.id !== id; });
+            saveTasks();
+            renderTasks();
+        }
+
+        function filterTasks(type) {
+            taskFilter = type;
+            var buttons = ["all", "pending", "completed"];
+            for (var i = 0; i < buttons.length; i++) {
+                var btn = document.getElementById("filter-" + buttons[i]);
+                if (buttons[i] === type) {
+                    btn.className = "px-3 py-1 rounded bg-white font-medium shadow-sm text-blue-600";
+                } else {
+                    btn.className = "px-3 py-1 rounded text-gray-600";
+                }
+            }
+            renderTasks();
+        }
+
+        function saveTasks() {
+            localStorage.setItem("ipad_tasks", JSON.stringify(tasks));
+        }
+
+        function renderTasks() {
+            var list = document.getElementById("task-list");
+            list.innerHTML = "";
+
+            var filtered = tasks.filter(function(t) {
+                if (taskFilter === "pending") return !t.completed;
+                if (taskFilter === "completed") return t.completed;
+                return true;
+            });
+
+            // Más estrellas primero; a igual prioridad, la más antigua primero
+            filtered.sort(function(a, b) {
+                var pa = a.priority || 1;
+                var pb = b.priority || 1;
+                if (pa !== pb) return pb - pa;
+                return a.id - b.id;
+            });
+
+            if (filtered.length === 0) {
+                list.innerHTML = '<li class="text-center py-8 text-gray-400 text-xs">No hay tareas asociadas en este filtro.</li>';
+                return;
+            }
+
+            for (var i = 0; i < filtered.length; i++) {
+                var task = filtered[i];
+                var li = document.createElement("li");
+                li.className = "flex items-center justify-between p-3 bg-white rounded-lg border border-gray-200 shadow-sm";
+
+                var checkClass = task.completed ? "line-through text-gray-400" : "text-gray-800";
+
+                var leftContent = '<div class="flex items-center space-x-3 cursor-pointer" onclick="toggleTask(' + task.id + ')">';
+                leftContent += '<input type="checkbox" ' + (task.completed ? 'checked' : '') + ' class="w-4 h-4 text-blue-600 rounded border-gray-300 pointer-events-none">';
+                leftContent += '<span class="text-sm font-medium ' + checkClass + '">' + escapeHtml(task.title) + '</span>';
+                leftContent += '</div>';
+
+                var stars = '<div class="flex items-center">' + starsHtml(task.priority || 1, "setTaskPriority(" + task.id + ",") + '</div>';
+                var deleteBtn = '<button onclick="deleteTask(' + task.id + ')" class="touch-btn text-red-500 hover:text-red-700 px-2 py-1 text-xs">Eliminar</button>';
+
+                li.innerHTML = leftContent + '<div class="flex items-center">' + stars + deleteBtn + '</div>';
+                list.appendChild(li);
+            }
+        }
+    </script>
+</body>
+</html>
